@@ -104,6 +104,14 @@ app.get('/auth/me', requireAuth, async (req, res) => {
 
 //_______________________________Projects Routes___________________________________________
 
+app.get('/projects', requireAuth, (req, res) => {
+
+    const projects = dao.getProjects(user.id);
+    if (projects){res.status(200).json(projects);}
+    else {res.status(500).json({ error: 'Failed to fetch projects' });
+}
+    
+});
 
 
 

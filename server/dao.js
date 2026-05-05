@@ -39,7 +39,22 @@ const getUserById = async (id) => {
   return result.rows[0] || null;
 };
 
+ // -------- Projects ----------
+
+ const getProjects = async (userId) => {
+  const result = db.query(`SELECT * FROM projects WHERE user_id = $1`, [userId]);
+  try{ 
+    if (result.rowCount === 0) return 'No projects found for this user.';
+    return result.rows;
+  } catch (error) { console.error('Error fetching projects:', error);
+  throw error;
+}};
+  
 
 
 
-module.exports = {createUser, loginUser, getUserById};
+
+
+
+
+module.exports = {createUser, loginUser, getUserById, getProjects};
