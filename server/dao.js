@@ -42,7 +42,7 @@ const getUserById = async (id) => {
  // -------- Projects ----------
 
  const getProjects = async (userId) => {
-  const result = db.query(`SELECT * FROM projects WHERE user_id = $1`, [userId]);
+  const result = await db.query(`SELECT * FROM projects WHERE user_id = $1`, [userId]);
   try{ 
     if (result.rowCount === 0) return 'No projects found for this user.';
     return result.rows;
@@ -51,10 +51,14 @@ const getUserById = async (id) => {
 }};
   
 
+const createProjects = async (name, description, userId) => {
+  const result = await db.query(`
+    INSERT INTO projects (name, description, user_id) VALUES ($1, $2, $3) 
+    RETURNING *`, [name, description, userId]);
+
+  return result.rows[0];
+};
 
 
 
-
-
-
-module.exports = {createUser, loginUser, getUserById, getProjects};
+module.exports = {createUser, loginUser, getUserById, getProjects, createProjects};
