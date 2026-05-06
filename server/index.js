@@ -121,8 +121,32 @@ app.post('/projects', requireAuth, async (req, res) => {
         res.status(201).json(result);
     } else {
         res.status(500).json({ error: 'Failed to create project' });
-    }});
+}});
 
+app.patch('/projects/:id', requireAuth, async (req, res) => {
+    const projectId = req.params.id;
+    const { name, description } = req.body;
+    
+    const result = await dao.updateProjects(projectId, name, description);
+    if (result) {
+        res.status(200).json(result);
+    } else {
+        res.status(500).json({ error: 'Failed to update project' });
+    }
+});
+
+app.delete('/projects/:id', requireAuth, async (req, res) => {
+    const projectId = req.params.id;
+    const userId = req.session.userId;
+    const result = await dao.deleteProjects(projectId, userId);
+    if (result) {
+        res.status(200).json({ message: 'Project deleted successfully' });
+    } else {
+        res.status(500).json({ error: 'Failed to delete project' });
+    }
+});
+
+// _______________________________Tasks Routes___________________________________________
 
 const PORT = 3000;
 app.listen(3000, () => {

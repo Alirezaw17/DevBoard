@@ -59,6 +59,27 @@ const createProjects = async (name, description, userId) => {
   return result.rows[0];
 };
 
+const updateProjects = async (projectId, name, description) => {  
+  const update = await db.query(`
+    UPDATE projects SET name = $1, description = $2 WHERE id = $3 
+    RETURNING *`, [name, description, projectId]);
+  return update.rows[0];
+  };
 
+  const deleteProjects = async (projectId, userId) => {
 
-module.exports = {createUser, loginUser, getUserById, getProjects, createProjects};
+    const userRole = await db.query(`SELECT role FROM users WHERE id = $1`, [userId]);
+    const owner = await db.query(`SELECT user_id FROM projects WHERE id = $1`, [projectId]);
+    
+    if (userRole.rows[0].role === 'admin' || owner.rows[0].user_id === userId) {
+      const del = await db.query(`DELETE FROM projects WHERE id = $1 RETURNING *`, [projectId]);
+      return del.rows[0];
+    } else if (!owner.rows[0]) {
+        throw new Error('Project not found');}
+      else {
+      throw new Error('Unauthorized: Only project owner or admin can delete this project.');
+    };
+
+  };
+
+module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects};
