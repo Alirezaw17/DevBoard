@@ -93,7 +93,13 @@ const updateProjects = async (projectId, name, description) => {
     
   };
 
-  
+  const createTasks = async (projectId, title, description, priority, status, due_date) => {
+    const newTask = await db.query(`INSERT INTO tasks (project_id, title, description, priority, status, due_date) 
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+       [projectId, title, description, priority ?? 'medium', status ?? "todo", due_date ?? null]);
+       return newTask.rows[0];
+
+  };
 
 
-module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects, getTasks};
+module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects, getTasks, createTasks};

@@ -160,8 +160,17 @@ app.get('/projects/:id/tasks', requireAuth, async (req, res) => {
 });
 
 
+app.post('/projects/:id/tasks', requireAuth, async (req, res) => {
+    const projectId = req.params.id;
+    const { title, description, priority, status, due_date } = req.body;
 
-
+    try {
+        const newTask = await dao.createTasks(projectId, title, description, priority, status, due_date);
+        res.status(201).json(newTask);
+    } catch (error) {
+        res.status(500).json({ error: error.message || 'Something wrong happened!' });
+    }
+});
 
 const PORT = 3000;
 app.listen(3000, () => {
