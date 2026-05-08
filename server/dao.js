@@ -49,7 +49,6 @@ const getUserById = async (id) => {
   } catch (error) { console.error('Error fetching projects:', error);
   throw error;
 }};
-  
 
 const createProjects = async (name, description, userId) => {
   const result = await db.query(`
@@ -82,4 +81,19 @@ const updateProjects = async (projectId, name, description) => {
 
   };
 
-module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects};
+  const getTasks = async (projectId) => {
+
+    const tasks = await db.query(`SELECT * FROM tasks WHERE project_id = $1`, [projectId]);
+    const projectName = await db.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
+
+     if (tasks.rowCount === 0) {
+      throw new Error(`No tasks found for the "${projectName.rows[0].name}" project.`);
+      } else if (tasks.rowCount > 0) return tasks.rows;
+    else throw new Error('db crashed!');
+    
+  };
+
+  
+
+
+module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects, getTasks};

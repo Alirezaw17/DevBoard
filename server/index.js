@@ -148,6 +148,21 @@ app.delete('/projects/:id', requireAuth, async (req, res) => {
 
 // _______________________________Tasks Routes___________________________________________
 
+app.get('/projects/:id/tasks', requireAuth, async (req, res) => {
+    const projectId = req.params.id;
+    try {
+        const tasks = await dao.getTasks(projectId);
+        
+        res.status(200).json(tasks);
+    } catch (error) {
+        res.status(500).json({ error: error.message || 'Something wrong happened!' });
+    }
+});
+
+
+
+
+
 const PORT = 3000;
 app.listen(3000, () => {
     console.log(`Server running on port ${PORT}`)
