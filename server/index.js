@@ -114,9 +114,9 @@ app.get('/projects', requireAuth, async (req, res) => {
 });
 
 app.post('/projects', requireAuth, async (req, res) => {
-    const { name, description } = req.body;
+    const { name, description, color} = req.body;
     const userId = req.session.userId;
-    const result = await dao.createProjects(name, description, userId);
+    const result = await dao.createProjects(name, description, userId, color);
     if (result) {
         res.status(201).json(result);
     } else {

@@ -16,8 +16,6 @@ const hashedPassword = await bcrypt.hash(password, 12);
 
     return query.rows[0];
 };
-
-
 const loginUser = async (email, password) => {
     
     const result = await db.query(`SELECT * FROM users WHERE email=$1`, [email]);
@@ -30,7 +28,6 @@ const loginUser = async (email, password) => {
     if (!isMatch) return null
     return user;
 };
-
 const getUserById = async (id) => {
   const result = await db.query(
     'SELECT id, email, display_name FROM users WHERE id = $1',
@@ -38,6 +35,10 @@ const getUserById = async (id) => {
   );
   return result.rows[0] || null;
 };
+
+
+
+
 
  // -------- Projects ----------
 
@@ -49,22 +50,33 @@ const getUserById = async (id) => {
   } catch (error) { console.error('Error fetching projects:', error);
   throw error;
 }};
-
-const createProjects = async (name, description, userId) => {
+const createProjects = async (name, description, userId, color) => {
   const result = await db.query(`
-    INSERT INTO projects (name, description, user_id) VALUES ($1, $2, $3) 
-    RETURNING *`, [name, description, userId]);
+    INSERT INTO projects (name, description, user_id, color) VALUES ($1, $2, $3, $4) 
+    RETURNING *`, [name, description, userId, color ?? '#6366f1']);
 
   return result.rows[0];
 };
+const updateProjects = async (projectId, { name, description, color, status }) => {
 
-const updateProjects = async (projectId, name, description) => {  
-  const update = await db.query(`
-    UPDATE projects SET name = $1, description = $2 WHERE id = $3 
-    RETURNING *`, [name, description, projectId]);
+  const fields = [];
+  const values = [];
+  let index = 1; // index++ is post-increment, so it starts at 1 for the first field then increments for the next field, etc.
+
+
+  if (name)        { fields.push(`name = $${index++}`);        values.push(name); }
+  if (description) { fields.push(`description = $${index++}`); values.push(description); }
+  if (color)       { fields.push(`color = $${index++}`);       values.push(color); }
+  if (status)      { fields.push(`status = $${index++}`);      values.push(status); }
+
+  if (fields.length === 0) throw new Error('No fields to update');
+
+  values.push(projectId); // Add projectId as the last parameter for the WHERE clause
+
+  const update = await db.query(
+    `UPDATE projects SET ${fields.join(', ')} WHERE id = $${index} RETURNING *`, values);
   return update.rows[0];
-  };
-
+};
   const deleteProjects = async (projectId, userId) => {
 
     const userRole = await db.query(`SELECT role FROM users WHERE id = $1`, [userId]);
@@ -81,6 +93,9 @@ const updateProjects = async (projectId, name, description) => {
 
   };
 
+
+   // -------- Tasks ----------
+
   const getTasks = async (projectId) => {
 
     const tasks = await db.query(`SELECT * FROM tasks WHERE project_id = $1`, [projectId]);
@@ -92,7 +107,6 @@ const updateProjects = async (projectId, name, description) => {
     else throw new Error('db crashed!');
     
   };
-
   const createTasks = async (projectId, title, description, priority, status, due_date) => {
     const newTask = await db.query(`INSERT INTO tasks (project_id, title, description, priority, status, due_date) 
       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
