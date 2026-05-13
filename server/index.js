@@ -63,8 +63,10 @@ app.post('/auth/register', async (req, res) => {
 });
 
 app.post('/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await dao.loginUser(email, password);
+
+    const { email, password } = req.body;
+   
+    const user = await dao.loginUser(email, password);
 
   if (!user) {
     return res.status(401).json({ error: 'Invalid email or password' });
@@ -150,15 +152,16 @@ app.delete('/projects/:id', requireAuth, async (req, res) => {
 
 app.get('/projects/:id/tasks', requireAuth, async (req, res) => {
     const projectId = req.params.id;
+    const userId = req.session.userId; // added ownership so i have to add userId to dao.getTasks function in dao.js and also in dao.sql file
     try {
-        const tasks = await dao.getTasks(projectId);
+         
+        const tasks = await dao.getTasks(projectId, userId);
         
         res.status(200).json(tasks);
     } catch (error) {
         res.status(500).json({ error: error.message || 'Something wrong happened!' });
     }
 });
-
 
 app.post('/projects/:id/tasks', requireAuth, async (req, res) => {
     const projectId = req.params.id;
@@ -167,6 +170,42 @@ app.post('/projects/:id/tasks', requireAuth, async (req, res) => {
     try {
         const newTask = await dao.createTasks(projectId, title, description, priority, status, due_date);
         res.status(201).json(newTask);
+    } catch (error) {
+        res.status(500).json({ error: error.message || 'Something wrong happened!' });
+    }
+});
+
+app.patch('/projects/:projectId/tasks/:taskId', requireAuth, async (req, res) => {
+
+    const { projectId, taskId } = req.params;
+    const body = {title: req.body.title, description: req.body.description,
+         priority: req.body.priority, status: req.body.status, due_date: req.body.due_date};
+
+    const validatePriority = ['low', 'medium', 'high'];
+    const validateStatus = ['todo', 'in_progress', 'done'];
+    
+    try {
+
+        if (body.status && !validateStatus.includes(body.status)) {
+         return res.status(400).json({ error: 'Invalid status value'})};
+        
+        if (body.priority && !validatePriority.includes(body.priority)) {
+        return res.status(400).json({ error: 'Invalid priority value' });}
+
+        const updatedTask = await dao.updateTasks(projectId, taskId, body);
+        res.status(200).json(updatedTask);
+    } catch (error) {
+        res.status(500).json({ error: error.message || 'Something wrong happened!' });
+    }
+});
+
+app.delete('/projects/:projectId/tasks/:taskId', requireAuth, async (req, res) => {
+    const { projectId, taskId } = req.params;
+    const userId = req.session.userId;
+
+    try {
+        const deletedTask = await dao.deleteTasks(taskId, projectId, userId);
+        res.status(200).json(deletedTask);
     } catch (error) {
         res.status(500).json({ error: error.message || 'Something wrong happened!' });
     }

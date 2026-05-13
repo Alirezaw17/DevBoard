@@ -95,18 +95,25 @@ const updateProjects = async (projectId, { name, description, color, status }) =
 
 
    // -------- Tasks ----------
+    const getTasks = async (projectId, userId) => {
 
-  const getTasks = async (projectId) => {
+  const project = await db.query(
+    `SELECT * FROM projects WHERE id = $1 AND user_id = $2`, // ownership of the project is required to view its tasks
+    [projectId, userId]
+  );
 
-    const tasks = await db.query(`SELECT * FROM tasks WHERE project_id = $1`, [projectId]);
-    const projectName = await db.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
+  if (!project.rows[0]) throw new Error('Project not found or unauthorized');
 
-     if (tasks.rowCount === 0) {
-      throw new Error(`No tasks found for the "${projectName.rows[0].name}" project.`);
-      } else if (tasks.rowCount > 0) return tasks.rows;
-    else throw new Error('db crashed!');
+  const tasks = await db.query(
+    `SELECT * FROM tasks WHERE project_id = $1`,
+    [projectId]  //  
+  );
+
+  if (tasks.rowCount === 0) throw new Error('No tasks found for the project');
+
+  return tasks.rows;
+};
     
-  };
   const createTasks = async (projectId, title, description, priority, status, due_date) => {
     const newTask = await db.query(`INSERT INTO tasks (project_id, title, description, priority, status, due_date) 
       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
@@ -115,5 +122,34 @@ const updateProjects = async (projectId, { name, description, color, status }) =
 
   };
 
+  const updateTasks = async (projectId, taskId, body) => {
+    
+    // fetch current task first:
+    const currentTask = await db.query(`SELECT * FROM tasks WHERE id = $1 AND project_id = $2`, [taskId, projectId]);
+    if (currentTask.rowCount === 0) throw new Error('Task not found');
+    else {
+        const old = currentTask.rows[0];
+    };
 
-module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects, getTasks, createTasks};
+    // use new value if sent, otherwise use old value:
+    const title = body.title ?? old.title;
+    const description = body.description ?? old.description;
+    const priority = body.priority ?? old.priority;
+    const status = body.status ?? old.status;
+    const due_date = body.due_date ?? old.due_date; 
+
+    const result = await db.query(`UPDATE tasks SET title = $1, description = $2, priority = $3, status = $4, due_date = $5
+  `+`WHERE id = $6 AND project_id = $7 RETURNING *`, 
+  [title, description, priority, status, due_date, taskId, projectId]);
+  return result.rows[0];
+  };
+
+  const deleteTasks = async (taskId, projectId, userId) => {
+    const project = await db.query(`SELECT * FROM projects WHERE id = $1 AND user_id = $2`, [projectId, userId]);
+    if (!project.rows[0]) throw new Error('Project not found or unauthorized');
+    const deleteTask = await db.query(`DELETE FROM tasks WHERE id = $1 AND project_id = $2 RETURNING *`, [taskId, projectId]);
+    if (deleteTask.rowCount === 0) throw new Error('Task not found');
+    return deleteTask.rows[0];
+  };
+
+module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects, getTasks, createTasks, updateTasks, deleteTasks};
