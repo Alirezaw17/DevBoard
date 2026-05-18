@@ -38,26 +38,63 @@ const getUserById = async (id) => {
 
 
 
-
-
  // -------- Projects ----------
 
  const getProjects = async (userId) => {
-  const result = await db.query(`SELECT * FROM projects WHERE user_id = $1`, [userId]);
-  try{ 
-    if (result.rowCount === 0) return 'No projects found for this user.';
-    return result.rows;
-  } catch (error) { console.error('Error fetching projects:', error);
-  throw error;
-}};
-const createProjects = async (name, description, userId, color) => {
-  const result = await db.query(`
-    INSERT INTO projects (name, description, user_id, color) VALUES ($1, $2, $3, $4) 
-    RETURNING *`, [name, description, userId, color ?? '#6366f1']);
+  try {
+    const role = await db.query(`SELECT role FROM users WHERE id = $1`, [userId]);
+    const isAdmin = role.rows[0]?.role === 'admin';
 
-  return result.rows[0];
+    if (isAdmin) {
+      const result = await db.query(`SELECT * FROM projects`);
+      return result.rows; // [] if empty
+    } else {
+      const result = await db.query(
+        `SELECT * FROM projects WHERE user_id = $1`, [userId]
+      );
+      return result.rows; // [] if empty
+    }
+
+  } catch (err) {
+    throw new Error('Error fetching projects');
+  }
 };
-const updateProjects = async (projectId, { name, description, color, status }) => {
+const createProjects = async (name, description, userId, color) => {
+  const client = await db.connect(); // gets a dedicated client for the transaction
+
+  // wrap two queries in a transaction, if one fails the other rollback.
+  // begin commit wraps queries automatically.
+  // ROLLBACK undoes everything if either query fails
+  // client.release() returns the connection to the pool no matter what
+  try {
+    await client.query('BEGIN');
+
+    const result = await client.query(`
+      INSERT INTO projects (name, description, user_id, color) 
+      VALUES ($1, $2, $3, $4) RETURNING *`,
+      [name, description, userId, color ?? '#6366f1']
+    );
+
+    await client.query(`
+      INSERT INTO activity_log (user_id, action, entity_type, entity_name, project_name)
+      VALUES ($1, $2, $3, $4, $5)`,
+      [userId, 'Created a Project', 'project', name, name]
+    );
+
+    await client.query('COMMIT');
+    return result.rows[0];
+
+  } catch (err) {
+    await client.query('ROLLBACK'); // undo everything if anything fails
+    throw err;
+  } finally {
+    client.release(); // always return connection to pool
+  }
+};
+
+
+const updateProjects = async (projectId, { name, description, color, status}, userId) => {
+
 
   const fields = [];
   const values = [];
@@ -73,25 +110,65 @@ const updateProjects = async (projectId, { name, description, color, status }) =
 
   values.push(projectId); // Add projectId as the last parameter for the WHERE clause
 
-  const update = await db.query(
+    // check ownership 
+    const ownership = await db.query(`SELECT id
+       FROM projects WHERE user_id = $1 and id = $2`, [userId, projectId]);
+
+    if(!ownership.rows[0]) {
+      throw new Error('Unauthorized');
+    };
+  
+    const client = await db.connect();
+
+  try {
+    await client.query('BEGIN');
+
+  const update = await client.query(
     `UPDATE projects SET ${fields.join(', ')} WHERE id = $${index} RETURNING *`, values);
-  return update.rows[0];
+
+    if (update.rowCount === 0) {
+      throw new Error('Project not found');
+    }
+
+    // inert into activity log:
+    await client.query(`INSERT INTO activity_log (user_id, action, entity_type, entity_name, project_name)
+    VALUES ($1, $2, $3, $4, $5)`,
+    [update.rows[0].user_id, 'Updated a Project', 'project', update.rows[0].name, update.rows[0].name]
+  );
+    await client.query('COMMIT');
+    return update.rows[0]; 
+} catch (err) {
+    await client.query('ROLLBACK'); // undo everything if anything fails
+    throw err;
+  } finally {
+    client.release(); // always return connection to pool
+  }
 };
+
+
+
+
+
+
+
   const deleteProjects = async (projectId, userId) => {
 
     const userRole = await db.query(`SELECT role FROM users WHERE id = $1`, [userId]);
     const owner = await db.query(`SELECT user_id FROM projects WHERE id = $1`, [projectId]);
     
-    if (userRole.rows[0].role === 'admin' || owner.rows[0].user_id === userId) {
-      const del = await db.query(`DELETE FROM projects WHERE id = $1 RETURNING *`, [projectId]);
-      return del.rows[0];
-    } else if (!owner.rows[0]) {
-        throw new Error('Project not found');}
-      else {
-      throw new Error('Unauthorized: Only project owner or admin can delete this project.');
-    };
+   if (!owner.rows[0]) throw new Error('Project not found');
 
-  };
+  if (userRole.rows[0].role !== 'admin' && owner.rows[0].user_id !== userId) throw new Error('Unauthorized');
+
+  const del = await db.query(`DELETE FROM projects WHERE id = $1 RETURNING *`, [projectId]);
+  return del.rows[0];
+
+};
+
+
+
+
+
 
 
    // -------- Tasks ----------
@@ -102,7 +179,7 @@ const updateProjects = async (projectId, { name, description, color, status }) =
     [projectId, userId]
   );
 
-  if (!project.rows[0]) throw new Error('Project not found or unauthorized');
+  if (!project.rows[0]) throw new Error('unauthorized');
 
   const tasks = await db.query(
     `SELECT * FROM tasks WHERE project_id = $1`,
@@ -120,16 +197,14 @@ const updateProjects = async (projectId, { name, description, color, status }) =
        [projectId, title, description, priority ?? 'medium', status ?? "todo", due_date ?? null]);
        return newTask.rows[0];
 
-  };
+};
 
   const updateTasks = async (projectId, taskId, body) => {
     
     // fetch current task first:
     const currentTask = await db.query(`SELECT * FROM tasks WHERE id = $1 AND project_id = $2`, [taskId, projectId]);
     if (currentTask.rowCount === 0) throw new Error('Task not found');
-    else {
-        const old = currentTask.rows[0];
-    };
+    const old = currentTask.rows[0];  // ← declare outside
 
     // use new value if sent, otherwise use old value:
     const title = body.title ?? old.title;
@@ -142,14 +217,41 @@ const updateProjects = async (projectId, { name, description, color, status }) =
   `+`WHERE id = $6 AND project_id = $7 RETURNING *`, 
   [title, description, priority, status, due_date, taskId, projectId]);
   return result.rows[0];
-  };
+};
 
   const deleteTasks = async (taskId, projectId, userId) => {
-    const project = await db.query(`SELECT * FROM projects WHERE id = $1 AND user_id = $2`, [projectId, userId]);
+
+    const isAuthorized = await db.query(`SELECT role FROM users WHERE id = $1`, [userId]);
+    const isAdmin = isAuthorized.rows[0]?.role === 'admin'; // With ?.  — returns undefined instead of crashing
+
+      // If not admin, verify project ownership
+    if (!isAdmin) {
+      const project = await db.query(
+      `SELECT * FROM projects WHERE id = $1 AND user_id = $2`,
+      [projectId, userId]
+    );
     if (!project.rows[0]) throw new Error('Project not found or unauthorized');
-    const deleteTask = await db.query(`DELETE FROM tasks WHERE id = $1 AND project_id = $2 RETURNING *`, [taskId, projectId]);
-    if (deleteTask.rowCount === 0) throw new Error('Task not found');
-    return deleteTask.rows[0];
   };
 
+    // Both admin and owner reach here -> admin is checked first, but normal user reaches normally and is checked for ownership, so both can delete the task if they have the right permissions.
+    const deleteTask = await db.query(
+    `DELETE FROM tasks WHERE id = $1 AND project_id = $2 RETURNING *`,
+    [taskId, projectId]
+  );
+  
+  if (deleteTask.rowCount === 0) throw new Error('Task not found');
+  return deleteTask.rows[0];
+};
+
+
+
+
+
+
+
+
+
+  //----------------------------- DASHBOARD AND USERS -----------------------------
+
+  
 module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects, getTasks, createTasks, updateTasks, deleteTasks};

@@ -126,15 +126,25 @@ app.post('/projects', requireAuth, async (req, res) => {
 }});
 
 app.patch('/projects/:id', requireAuth, async (req, res) => {
-    const projectId = req.params.id;
-    const { name, description } = req.body;
-    
-    const result = await dao.updateProjects(projectId, name, description);
-    if (result) {
-        res.status(200).json(result);
-    } else {
-        res.status(500).json({ error: 'Failed to update project' });
+  const projectId = req.params.id;
+  const userId = req.session.userId;
+  const { name, description, color, status } = req.body;
+
+  try {
+    const result = await dao.updateProjects(
+      projectId,
+      { name, description, color, status },
+      userId
+    );
+
+    res.status(200).json(result);
+  } catch (err) {
+    if (err.message === 'Unauthorized') {
+      return res.status(403).json({ error: 'Unauthorized' });
     }
+
+    res.status(500).json({ error: 'Failed to update project' });
+  }
 });
 
 app.delete('/projects/:id', requireAuth, async (req, res) => {
@@ -202,7 +212,7 @@ app.patch('/projects/:projectId/tasks/:taskId', requireAuth, async (req, res) =>
 app.delete('/projects/:projectId/tasks/:taskId', requireAuth, async (req, res) => {
     const { projectId, taskId } = req.params;
     const userId = req.session.userId;
-
+    
     try {
         const deletedTask = await dao.deleteTasks(taskId, projectId, userId);
         res.status(200).json(deletedTask);
