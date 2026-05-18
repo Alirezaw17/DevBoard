@@ -91,8 +91,6 @@ const createProjects = async (name, description, userId, color) => {
     client.release(); // always return connection to pool
   }
 };
-
-
 const updateProjects = async (projectId, { name, description, color, status}, userId) => {
 
 
@@ -144,26 +142,34 @@ const updateProjects = async (projectId, { name, description, color, status}, us
     client.release(); // always return connection to pool
   }
 };
-
-
-
-
-
-
-
   const deleteProjects = async (projectId, userId) => {
 
-    const userRole = await db.query(`SELECT role FROM users WHERE id = $1`, [userId]);
-    const owner = await db.query(`SELECT user_id FROM projects WHERE id = $1`, [projectId]);
+    const client = await db.connect();
+
+    try {
+      await client.query('BEGIN');
+
+    const userRole = await client.query(`SELECT role FROM users WHERE id = $1`, [userId]);
+    const owner = await client.query(`SELECT user_id FROM projects WHERE id = $1`, [projectId]);
     
    if (!owner.rows[0]) throw new Error('Project not found');
 
   if (userRole.rows[0].role !== 'admin' && owner.rows[0].user_id !== userId) throw new Error('Unauthorized');
 
-  const del = await db.query(`DELETE FROM projects WHERE id = $1 RETURNING *`, [projectId]);
-  return del.rows[0];
+  const del = await client.query(`DELETE FROM projects WHERE id = $1 RETURNING *`, [projectId]);
 
-};
+  const activityLog = await client.query(`INSERT INTO activity_log (user_id, action, entity_type, entity_name, project_name)
+  VALUES ($1, $2, $3, $4, $5)`,
+  [userId, 'Deleted a Project', 'project', del.rows[0].name, del.rows[0].name]
+);
+  await client.query('COMMIT');
+  return del.rows[0];
+} catch (err) {
+    await client.query('ROLLBACK'); 
+    throw err;
+} finally {
+    client.release();
+}};
 
 
 
