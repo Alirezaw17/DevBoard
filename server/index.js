@@ -158,6 +158,9 @@ app.delete('/projects/:id', requireAuth, async (req, res) => {
     }
 });
 
+
+
+
 // _______________________________Tasks Routes___________________________________________
 
 app.get('/projects/:id/tasks', requireAuth, async (req, res) => {
@@ -220,6 +223,10 @@ app.delete('/projects/:projectId/tasks/:taskId', requireAuth, async (req, res) =
         res.status(500).json({ error: error.message || 'Something wrong happened!' });
     }
 });
+
+
+
+
 
 const PORT = 3000;
 app.listen(3000, () => {

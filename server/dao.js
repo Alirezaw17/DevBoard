@@ -169,12 +169,8 @@ const updateProjects = async (projectId, { name, description, color, status}, us
     throw err;
 } finally {
     client.release();
-}};
-
-
-
-
-
+}
+};
 
 
    // -------- Tasks ----------
@@ -196,7 +192,6 @@ const updateProjects = async (projectId, { name, description, color, status}, us
 
   return tasks.rows;
 };
-    
   const createTasks = async (projectId, title, description, priority, status, due_date) => {
     const newTask = await db.query(`INSERT INTO tasks (project_id, title, description, priority, status, due_date) 
       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
@@ -204,7 +199,6 @@ const updateProjects = async (projectId, { name, description, color, status}, us
        return newTask.rows[0];
 
 };
-
   const updateTasks = async (projectId, taskId, body) => {
     
     // fetch current task first:
@@ -224,7 +218,6 @@ const updateProjects = async (projectId, { name, description, color, status}, us
   [title, description, priority, status, due_date, taskId, projectId]);
   return result.rows[0];
 };
-
   const deleteTasks = async (taskId, projectId, userId) => {
 
     const isAuthorized = await db.query(`SELECT role FROM users WHERE id = $1`, [userId]);
