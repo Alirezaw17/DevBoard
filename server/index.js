@@ -225,6 +225,17 @@ app.delete('/projects/:projectId/tasks/:taskId', requireAuth, async (req, res) =
 });
 
 
+// dashboard route:
+app.get('/dashboard', requireAuth, async (req, res) => {
+    const userId = req.session.userId;  
+    try {
+        const summery = await dao.getSummsById(userId);
+        res.status(200).json(summery);
+    } catch (error) {
+        res.status(500).json({ error: error.message || 'Something wrong happened!' });
+    }       
+}); 
+
 
 
 

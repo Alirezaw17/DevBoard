@@ -252,5 +252,9 @@ const updateProjects = async (projectId, { name, description, color, status}, us
 
   //----------------------------- DASHBOARD AND USERS -----------------------------
 
-  
-module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects, getTasks, createTasks, updateTasks, deleteTasks};
+  const getSummsById = async (userId) => {
+    const summery = await db.query(`SELECT * FROM activity_log WHERE user_id = $1`, [userId]);
+    return summery.rows;
+  };
+
+module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects, getTasks, createTasks, updateTasks, deleteTasks, getSummsById};

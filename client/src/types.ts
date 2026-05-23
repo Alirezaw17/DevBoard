@@ -36,3 +36,14 @@ export interface Task {
   due_date: string | null;
   created_at: string;
 }
+
+export interface ActivityLog {
+    id: number;
+    user_id: number;    
+    action: string;
+    timestamp: string;
+    entity_type: string;
+    entity_name: string;
+    project_name: string;
+    created_at: string;
+};
