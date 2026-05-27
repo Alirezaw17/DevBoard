@@ -7,6 +7,7 @@ const dao = require('./dao.js');
 const { RedisStore } = require('connect-redis');  
 const redisClient = require('./redis.js');   
 const requireAuth = require('./requireAuth.js');
+const projectService = require('./projectService.js'); // using service layer 
 
 
 const corsOption = {

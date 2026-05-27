@@ -59,6 +59,18 @@ const getUserById = async (id) => {
     throw new Error('Error fetching projects');
   }
 };
+// better way to maanage as a real projet is to use three layers: 
+// route -> service -> dao
+
+const getProjectById = async (projectId) => {
+  const result = await db.query(
+    `SELECT * FROM projects WHERE id = $1`,
+    [projectId]
+  );
+  return result.rows[0] || null;
+};
+
+
 const createProjects = async (name, description, userId, color) => {
   const client = await db.connect(); // gets a dedicated client for the transaction
 
