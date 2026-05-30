@@ -74,6 +74,10 @@ export const getUserById = async (): Promise<User> => {
   return data;
 }; 
 
+
+
+  
+
 // for projects: 
 
 export const getProjects = async (): Promise<Project[]> => {
@@ -87,6 +91,19 @@ export const getProjects = async (): Promise<Project[]> => {
     if(!response.ok) { throw new Error(data.error || 'Failed to receive projects')}
     return data;
 };
+
+export const getProjectById = async (projectId: number): Promise<Project> => {
+const response = await fetch(`${API_URL}/projects/${projectId}`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to fetch projects info');
+  }
+
+  return data;
+}
 
 export const createProject = async (body: {
     name: string;

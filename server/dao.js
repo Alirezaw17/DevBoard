@@ -39,29 +39,21 @@ const getUserById = async (id) => {
 
 
  // -------- Projects ----------
-
  const getProjects = async (userId) => {
   try {
-    const role = await db.query(`SELECT role FROM users WHERE id = $1`, [userId]);
-    const isAdmin = role.rows[0]?.role === 'admin';
-
-    if (isAdmin) {
-      const result = await db.query(`SELECT * FROM projects`);
-      return result.rows; // [] if empty
-    } else {
       const result = await db.query(
         `SELECT * FROM projects WHERE user_id = $1`, [userId]
       );
       return result.rows; // [] if empty
     }
 
-  } catch (err) {
+  catch (err) {
     throw new Error('Error fetching projects');
-  }
-};
+  }};
+
+
 // better way to maanage as a real projet is to use three layers: 
 // route -> service -> dao
-
 const getProjectById = async (projectId) => {
   const result = await db.query(
     `SELECT * FROM projects WHERE id = $1`,
@@ -269,4 +261,4 @@ const updateProjects = async (projectId, { name, description, color, status}, us
     return summery.rows;
   };
 
-module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects, getTasks, createTasks, updateTasks, deleteTasks, getSummsById};
+module.exports = {createUser, loginUser, getUserById, getProjects, createProjects, updateProjects, deleteProjects, getTasks, createTasks, updateTasks, deleteTasks, getSummsById, getProjectById};

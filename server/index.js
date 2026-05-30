@@ -7,7 +7,7 @@ const dao = require('./dao.js');
 const { RedisStore } = require('connect-redis');  
 const redisClient = require('./redis.js');   
 const requireAuth = require('./requireAuth.js');
-const projectService = require('./projectService.js'); // using service layer 
+const service = require('./service.js'); // using service layer 
 
 
 const corsOption = {
@@ -115,6 +115,27 @@ app.get('/projects', requireAuth, async (req, res) => {
     else {res.status(500).json({ error: 'Failed to fetch projects' });
 }
 });
+
+app.get('/projects/:id', requireAuth, async (req, res) => {
+
+      const projectId = req.params.id;
+      const userId = req.session.userId;
+      
+      try {
+    const project = await service.getProjectById(projectId, userId);
+    res.status(200).json(project);
+  } catch (error) {
+    if (error.message === 'Project not found') {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (error.message === 'Unauthorized') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    res.status(500).json({ error: error.message || 'Something wrong happened!' });
+  }
+})
 
 app.post('/projects', requireAuth, async (req, res) => {
     const { name, description, color} = req.body;

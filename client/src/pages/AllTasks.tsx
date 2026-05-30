@@ -2,10 +2,7 @@
 
 
 
-
-
-
-export default function Project() {
+export default function AllTasks() {
     return ( 
         <></>
     )

@@ -1,6 +1,6 @@
 // projectService.js
 
-import dao from './dao'
+const dao = require('./dao.js');
 
 const getProjectById = async (projectId, userId) => {
   const project = await dao.getProjectById(projectId);
@@ -10,3 +10,5 @@ const getProjectById = async (projectId, userId) => {
 
   return project;
 };
+
+module.exports = {getProjectById};
