@@ -1,28 +1,39 @@
 import { registerUser } from '../api';
-import { useState } from 'react';
+import { useState, } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Container from 'react-bootstrap/Container';
 import Card from 'react-bootstrap/Card';
+import { Link } from 'react-router-dom';
 
 export default function Register() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>):
+    Promise<void> => {
     e.preventDefault();
+    setError('');  // ← clear before trying again
 
     try {
       await registerUser({
-        email,
-        password,
-        displayName
-      });
-    } catch (error) {
-      console.error(error);
+        email, 
+        password, 
+        display_name: displayName});
+        navigate('/login');
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Registeration failed due to the unknown reason, try again later.')
+      }
     }
   };
+  
 
   return (
     <div
@@ -90,7 +101,7 @@ export default function Register() {
                   type="email"
                   placeholder="Enter your email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {setEmail(e.target.value); setError('');}}
                   style={{
                     backgroundColor: '#101010',
                     color: '#f5f5f5',
@@ -118,7 +129,7 @@ export default function Register() {
                   type="password"
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {setPassword(e.target.value); setError('');}}
                   style={{
                     backgroundColor: '#101010',
                     color: '#f5f5f5',
@@ -143,7 +154,7 @@ export default function Register() {
                   type="text"
                   placeholder="Enter your display name"
                   value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  onChange={(e) => {setDisplayName(e.target.value); setError('');}}
                   style={{
                     backgroundColor: '#101010',
                     color: '#f5f5f5',
@@ -179,8 +190,9 @@ export default function Register() {
                 marginBottom: 0
               }}
             >
-              Already have an account?{' '}
-              <span
+              Already have an account? {' '}
+              <Link
+              to='/login'
                 style={{
                   color: '#c9a227',
                   fontWeight: 600,
@@ -188,7 +200,7 @@ export default function Register() {
                 }}
               >
                 Login
-              </span>
+              </Link>
             </p>
           </Card.Body>
         </Card>
