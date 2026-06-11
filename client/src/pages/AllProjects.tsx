@@ -70,7 +70,7 @@ export default function AllProjects() {
   };
 
   // ── Delete project ────────────────────────────────────────────
-  const handleDelete = async (id: number | string) => {
+  const handleDelete = async (id: number) => {
     try {
       await deleteProject(id);
       setProjects((prev) => prev.filter((p) => p.id !== id));

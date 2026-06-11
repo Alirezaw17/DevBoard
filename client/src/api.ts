@@ -1,4 +1,4 @@
-import type { User, Project, Task, ActivityLog } from './types';
+import type { User, Projectt, Taskk, ActivityLog } from './types';
 
 const API_URL = 'http://localhost:3000';
 
@@ -80,7 +80,7 @@ export const getUserById = async (): Promise<User> => {
 
 // for projects: 
 
-export const getProjects = async (): Promise<Project[]> => {
+export const getProjects = async (): Promise<Projectt[]> => {
     const response = await fetch(`${API_URL}/projects`, {
         method: 'GET',
         credentials: 'include'
@@ -92,7 +92,7 @@ export const getProjects = async (): Promise<Project[]> => {
     return data;
 };
 
-export const getProjectById = async (projectId: number): Promise<Project> => {
+export const getProjectById = async (projectId: number): Promise<Projectt> => {
 const response = await fetch(`${API_URL}/projects/${projectId}`, {
     method: 'GET',
     credentials: 'include',
@@ -130,7 +130,7 @@ export const updateProject = async (projectId: number, body: {
     description?: string;
     color?: string;
     status?: string;
-}): Promise<Project> => {
+}): Promise<Projectt> => {
 
     const response = await fetch(`${API_URL}/projects/${projectId}`, {
 
@@ -147,7 +147,7 @@ export const updateProject = async (projectId: number, body: {
 };
 
 
-export const deleteProject = async (projectId: number): Promise<Project> => { // since my dao returns the full object of deleted project i use type project here
+export const deleteProject = async (projectId: number): Promise<Projectt> => { // since my dao returns the full object of deleted project i use type project here
     const response = await fetch(`${API_URL}/projects/${projectId}`, {
         method: 'DELETE',
         credentials: 'include',
@@ -161,7 +161,7 @@ export const deleteProject = async (projectId: number): Promise<Project> => { //
 };
 
 // ------------ tasks
-export const getTasks = async (projectId: number): Promise<Task[]> => { // since we are returning many tasks i use [] arrays of tasks
+export const getTasks = async (projectId: number): Promise<Taskk[]> => { // since we are returning many tasks i use [] arrays of tasks
     const response = await fetch(`${API_URL}/projects/${projectId}/tasks`, {
         method: 'GET',
         credentials: 'include'
@@ -215,7 +215,7 @@ export const updateTask = async (projectId: number, taskId: number, body: {
     return data;
 }
 
-export const deleteTask = async (projectId: number, taskId: number): Promise<Task> => {
+export const deleteTask = async (projectId: number, taskId: number): Promise<Taskk> => {
     const response = await fetch(`${API_URL}/projects/${projectId}/tasks/${taskId}`, {
         method: 'DELETE',
         credentials: 'include'
