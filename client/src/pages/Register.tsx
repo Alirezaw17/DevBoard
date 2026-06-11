@@ -7,6 +7,7 @@ import Container from 'react-bootstrap/Container';
 import Card from 'react-bootstrap/Card';
 import { Link } from 'react-router-dom';
 
+
 export default function Register() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');

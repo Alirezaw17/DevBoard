@@ -16,7 +16,7 @@ export interface User {
 };
 */
 
-export interface Project {
+export interface Projectt {
   id: number;
   name: string;
   description: string;
@@ -26,7 +26,7 @@ export interface Project {
   created_at: string;
 }
 
-export interface Task {
+export interface Taskk {
   id: number;
   project_id: number;
   title: string;
@@ -41,9 +41,17 @@ export interface ActivityLog {
     id: number;
     user_id: number;    
     action: string;
-    timestamp: string;
     entity_type: string;
     entity_name: string;
     project_name: string;
     created_at: string;
+};
+
+export interface Activity {
+  id: number;
+  userId: number;
+  action: string;
+  title: string;
+  type: string;
+  time: string;
 };

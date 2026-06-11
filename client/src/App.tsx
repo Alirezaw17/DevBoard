@@ -8,9 +8,26 @@ import Project from './pages/Project';
 import Task from './pages/Task';
 import AllTasks from './pages/AllTasks';
 import AllProjects from './pages/AllProjects';
+import { getProjects, getTasks } from "./api";
+import { useEffect, useState } from "react";
+import type { Projectt, Taskk } from "./types";
+
+
+
+
 
 
 function App() {
+
+const [projects, setProjects] = useState<Projectt[]>([]) //
+
+useEffect(() => {
+  getProjects()
+  .then((pjs) => {
+    setProjects(pjs)
+  
+  })
+}, []);
 
   
   return (
@@ -19,9 +36,9 @@ function App() {
     <Route path="/register" element={<Register />}/>
     
     <Route element={<Layout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/projects" element={<AllProjects />} />
-        <Route path="/projects/:id" element={<Project />} />
+        <Route path="/dashboard" element={<Dashboard projects={projects} />} />
+        <Route path="/project" element={<AllProjects />} />
+        <Route path="/projects/:id" element={<Project/>} />
         <Route path="/projects/:pId/tasks" element={<AllTasks />} />
         <Route path="/projects/:pId/tasks/:tId" element={<Task />} />
     </Route>

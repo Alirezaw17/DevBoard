@@ -3,30 +3,48 @@ import Card from 'react-bootstrap/Card';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
+import { useState, useEffect } from 'react';
+import { Navigate, Link } from 'react-router-dom';
+import { getDashboardData } from '../api';
+import type { ActivityLog, Activity, Projectt } from '../types';
 
-export default function Dashboard() {
-  const recentActivities = [
-    {
-      id: 1,
-      action: 'Created project "DevBoard"',
-      time: '2 hours ago',
-    },
-    {
-      id: 2,
-      action: 'Updated task "Build login page"',
-      time: '4 hours ago',
-    },
-    {
-      id: 3,
-      action: 'Completed task "Register UI design"',
-      time: 'Yesterday',
-    },
-    {
-      id: 4,
-      action: 'Added new project member',
-      time: '2 days ago',
-    },
-  ];
+// comes from app for having all projects
+interface DashboardProps {
+  projects: Projectt[];
+};
+
+
+const log = (model: ActivityLog): Activity => {
+
+  return {
+    id: model.id,
+    userId: model.user_id,
+    action: model.action,
+    title: model.entity_name,
+    type: model.entity_type,
+    time: model.created_at,
+  }
+};
+
+
+export default function Dashboard({ projects }: DashboardProps) {
+
+const [activity, setActivity] = useState<Activity[]>([]); // should be activity
+
+ useEffect(() => {
+  getDashboardData()
+  .then((data) => {
+    setActivity(data.map(log))
+  })
+  }, [])
+
+ function countActiveProjects(projects: Projectt[]) {
+  return projects.filter((p) => p.status === 'active').length;
+}
+
+const activeProjectsCount = countActiveProjects(projects);
+
+  
 
   return (
     <div
@@ -108,22 +126,24 @@ export default function Dashboard() {
                     </p>
                   </div>
 
-                  <Button
-                    style={{
-                      backgroundColor: '#c9a227',
-                      border: 'none',
-                      color: '#111111',
-                      fontWeight: 700,
-                      padding: '10px 18px',
-                      borderRadius: '10px',
-                    }}
-                  >
-                    Go to Projects
-                  </Button>
-                </div>
+                  <Link to="/project" style={{ textDecoration: 'none' }}>
+                    <Button
+                      style={{
+                        backgroundColor: '#c9a227',
+                        border: 'none',
+                        color: '#111111',
+                        fontWeight: 700,
+                        padding: '10px 18px',
+                        borderRadius: '10px',
+                      }}
+                    >
+                      Go to Projects
+                    </Button>
+                  </Link>
+                                  </div>
 
                 <div>
-                  {recentActivities.map((activity) => (
+                  {activity.map((activity) => (
                     <div
                       key={activity.id}
                       style={{
@@ -158,7 +178,7 @@ export default function Dashboard() {
                             fontSize: '0.98rem',
                           }}
                         >
-                          {activity.action}
+                           {activity.action} titled "{activity.title}"
                         </span>
                       </div>
 
@@ -169,7 +189,7 @@ export default function Dashboard() {
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {activity.time}
+                        {new Date(activity.time).toLocaleString()}
                       </span>
                     </div>
                   ))}
@@ -210,9 +230,9 @@ export default function Dashboard() {
 
                 <div style={{ marginBottom: '18px' }}>
                   <p style={{ color: '#8f8f8f', marginBottom: '6px' }}>
-                    Active Projects
+                    Active Projects 
                   </p>
-                  <h2 style={{ color: '#f5f5f5', margin: 0 }}>4</h2>
+                  <h2 style={{ color: '#f5f5f5', margin: 0 }}>{activeProjectsCount}</h2>
                 </div>
 
                 <div style={{ marginBottom: '18px' }}>
