@@ -192,7 +192,7 @@ const updateProjects = async (projectId, { name, description, color, status}, us
     [projectId]  //  
   );
 
-  if (tasks.rowCount === 0) throw new Error('No tasks found for the project');
+  if (tasks.rowCount === 0) ([]);
 
   return tasks.rows;
 };

@@ -109,7 +109,7 @@ export const createProject = async (body: {
     name: string;
     description: string;
     color?: string; // i do not always send the color
-}): Promise<Project> => {
+}): Promise<Projectt> => {
     const response = await fetch(`${API_URL}/projects`, {
         method: 'POST',
         credentials: 'include',
@@ -181,7 +181,7 @@ export const createTask = async (projectId: number, body: {
     priority?: string;
     status?: string;
     due_date?: string;
-}): Promise<Task> => {
+}): Promise<Taskk> => {
     const response = await fetch(`${API_URL}/projects/${projectId}/tasks`, {
         method: 'POST',
         credentials: 'include',

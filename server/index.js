@@ -199,15 +199,32 @@ app.get('/projects/:id/tasks', requireAuth, async (req, res) => {
 });
 
 app.post('/projects/:id/tasks', requireAuth, async (req, res) => {
-    const projectId = req.params.id;
-    const { title, description, priority, status, due_date } = req.body;
+  const projectId = Number(req.params.id);
+  const { title, description, priority, status, due_date } = req.body;
 
-    try {
-        const newTask = await dao.createTasks(projectId, title, description, priority, status, due_date);
-        res.status(201).json(newTask);
-    } catch (error) {
-        res.status(500).json({ error: error.message || 'Something wrong happened!' });
-    }
+  if (!projectId) {
+    return res.status(400).json({ error: 'Invalid project id' });
+  }
+
+  if (!title || !description) {
+    return res.status(400).json({ error: 'Title and description are required' });
+  }
+
+  try {
+    const newTask = await dao.createTasks(
+      projectId,
+      title,
+      description,
+      priority,
+      status,
+      due_date
+    );
+
+    return res.status(201).json(newTask);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Something wrong happened!';
+    return res.status(500).json({ error: message });
+  }
 });
 
 app.patch('/projects/:projectId/tasks/:taskId', requireAuth, async (req, res) => {

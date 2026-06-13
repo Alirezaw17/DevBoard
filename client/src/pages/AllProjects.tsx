@@ -338,7 +338,7 @@ export default function AllProjects() {
                           <Trash size={16} />
                         </Button>
 
-                          <Link to={`/projects/${project.id}/tasks`}>
+                          <Link to={`/project/${project.id}/tasks`}>
                             <Button
                             style={{
                               backgroundColor: "transparent",
